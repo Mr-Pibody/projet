@@ -1,0 +1,87 @@
+<%- include('../partials/back-button') %>
+
+<%
+  const THEMES = {
+    boutique: { icon: 'fa-store', desc: "Catalogue de produits avec commande directe via WhatsApp.", eyebrow: 'Projet — Full-stack' },
+    ecommerce: { icon: 'fa-cart-shopping', desc: "Boutique en ligne avec commande directe via WhatsApp — sans paiement en ligne, sans compte requis.", eyebrow: 'Projet — E-commerce' },
+    restaurant: { icon: 'fa-utensils', desc: "Menu de restaurant avec commande directe via WhatsApp.", eyebrow: 'Projet — Restaurant' }
+  };
+  const theme = THEMES[typeCatalogue] || THEMES.boutique;
+  const priceUnit = typeCatalogue === 'restaurant' ? 'FCFA' : 'FCFA';
+%>
+
+<section class="projet-page">
+  <div class="container">
+    <div class="projet-header">
+      <div class="projet-eyebrow"><%= theme.eyebrow %></div>
+      <h1 class="projet-title"><i class="fa-solid <%= theme.icon %>"></i> <%= title %></h1>
+      <p class="projet-desc"><%= theme.desc %></p>
+    </div>
+
+    <% if (isAdmin) { %>
+    <div class="projet-panel glass" style="margin-bottom:30px;">
+      <h3 style="margin-bottom:16px;"><i class="fa-solid fa-plus"></i> Ajouter un <%= itemLabel %></h3>
+      <form id="produitForm">
+        <div class="field-row-inline">
+          <div class="field-row"><label>Nom</label><input type="text" name="nom" required></div>
+          <div class="field-row"><label>Prix (<%= priceUnit %>)</label><input type="number" name="prix" required></div>
+        </div>
+        <div class="field-row-inline">
+          <div class="field-row"><label>Stock</label><input type="number" name="stock" value="1"></div>
+          <div class="field-row"><label>WhatsApp (numéro)</label><input type="text" name="whatsapp_numero" placeholder="22901992429" value="22901992429"></div>
+        </div>
+        <div class="field-row"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+        <div class="field-row"><label>Photo</label><input type="file" name="image" accept="image/*"></div>
+        <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Ajouter</button>
+      </form>
+      <button class="btn btn-ghost btn-block" id="logoutBtn" style="margin-top:10px;">Se déconnecter de cet espace</button>
+    </div>
+    <% } %>
+
+    <h3 style="margin-bottom:20px;"><%= typeCatalogue === 'restaurant' ? 'Notre menu' : 'Produits disponibles' %></h3>
+    <div class="projects-grid">
+      <% if (!produits.length) { %>
+        <p style="color:var(--text-muted);">Rien pour le moment.</p>
+      <% } %>
+      <% produits.forEach(p => { %>
+        <div class="project-card glass">
+          <% if (p.image) { %><img src="/uploads/boutique/<%= p.image %>" style="width:100%; height:160px; object-fit:cover; border-radius:10px; margin-bottom:14px;"><% } %>
+          <h3><%= p.nom %></h3>
+          <p><%= p.description %></p>
+          <div style="font-size:1.3rem; font-weight:700; color:var(--accent); margin:10px 0;"><%= p.prix %> <%= priceUnit %></div>
+          <% if (typeCatalogue !== 'restaurant') { %><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">Stock : <%= p.stock %></div><% } %>
+          <a href="https://wa.me/<%= p.whatsapp_numero %>?text=<%= encodeURIComponent('Bonjour, je voudrais commander : ' + p.nom) %>" target="_blank" class="btn btn-primary btn-block"><i class="fa-brands fa-whatsapp"></i> Commander</a>
+          <% if (isAdmin) { %><button class="btn btn-ghost btn-block delete-btn" data-id="<%= p.id %>" style="margin-top:8px;"><i class="fa-solid fa-trash"></i> Supprimer</button><% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<script>
+  const TYPE = '<%= typeCatalogue %>';
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+    await fetch(`/projets/boutique/${TYPE}/admin/logout`, { method: 'POST' });
+    location.reload();
+  });
+
+  const produitForm = document.getElementById('produitForm');
+  if (produitForm) produitForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch(`/projets/boutique/${TYPE}/admin/produits`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'Erreur lors de l\'ajout.');
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Supprimer cet élément ?')) return;
+      await fetch(`/projets/boutique/${TYPE}/admin/produits/${btn.dataset.id}/supprimer`, { method: 'POST' });
+      location.reload();
+    });
+  });
+</script>

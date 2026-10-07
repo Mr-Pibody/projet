@@ -1,0 +1,80 @@
+<%- include('../partials/back-button') %>
+
+<section class="projet-page">
+  <div class="container">
+    <div class="projet-header">
+      <div class="projet-eyebrow">Résultats en direct</div>
+      <h1 class="projet-title"><%= sondage.titre %></h1>
+      <p class="projet-desc"><span id="totalReponses">0</span> réponse(s) reçue(s). Cette page se met à jour automatiquement.</p>
+    </div>
+
+    <div id="resultatsContainer"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const code = '<%= sondage.code %>';
+  const socket = io();
+  const charts = {};
+
+  socket.emit('rejoindre-salon', { code: 'sondage-' + code }); // réutilise la room mechanism
+
+  async function loadResults() {
+    const res = await fetch(`/projets/sondage/api/resultats/${code}`);
+    const data = await res.json();
+    document.getElementById('totalReponses').textContent = data.totalReponses;
+
+    const container = document.getElementById('resultatsContainer');
+    if (!container.dataset.built) {
+      container.innerHTML = data.resultats.map((r, i) => `
+        <div class="projet-panel glass" style="margin-bottom:20px;">
+          <h3 style="margin-bottom:14px;">${r.question}</h3>
+          ${r.type === 'texte' ? `<div id="texte-${i}"></div>` : `<div class="chart-wrap" style="height:250px;"><canvas id="chart-${i}"></canvas></div><div id="detail-${i}" style="margin-top:16px;"></div>`}
+        </div>
+      `).join('');
+      container.dataset.built = '1';
+    }
+
+    data.resultats.forEach((r, i) => {
+      if (r.type === 'texte') {
+        document.getElementById(`texte-${i}`).innerHTML = r.reponses.length
+          ? r.reponses.map(t => `<div class="badge-info" style="display:block; margin-bottom:8px;">${t}</div>`).join('')
+          : '<p style="color:var(--text-muted);">Pas encore de réponse.</p>';
+        return;
+      }
+      const ctx = document.getElementById(`chart-${i}`);
+      const labels = Object.keys(r.counts);
+      const values = Object.values(r.counts);
+      const total = values.reduce((a, b) => a + b, 0);
+
+      const detailBox = document.getElementById(`detail-${i}`);
+      if (detailBox) {
+        detailBox.innerHTML = `
+          <table class="table-clean">
+            <thead><tr><th>Option</th><th>Voix</th><th>Pourcentage</th></tr></thead>
+            <tbody>
+              ${labels.map((l, idx) => {
+                const pct = total > 0 ? ((values[idx] / total) * 100).toFixed(1) : '0.0';
+                return `<tr><td>${l}</td><td><strong>${values[idx]}</strong></td><td>${pct}%</td></tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (charts[i]) { charts[i].data.datasets[0].data = values; charts[i].update(); return; }
+      charts[i] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data: values, backgroundColor: '#00f0c0' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: '#9aa3b8' }, grid: { display: false } }, y: { ticks: { color: '#9aa3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } } } }
+      });
+    });
+  }
+
+  socket.on('nouvelle-reponse', loadResults);
+  loadResults();
+  setInterval(loadResults, 8000); // fallback en cas de souci socket
+</script>

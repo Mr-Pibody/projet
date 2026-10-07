@@ -1,0 +1,133 @@
+<%- include('../partials/back-button') %>
+
+<section class="projet-page">
+  <div class="container">
+    <div class="projet-header">
+      <div class="projet-eyebrow">Projet — Événementiel</div>
+      <h1 class="projet-title">Plateforme de vote</h1>
+      <p class="projet-desc">Créez un événement avec plusieurs catégories de vote, partagez le code, les participants votent une seule fois par catégorie (protection par adresse IP).</p>
+      <div class="badge-info" style="margin-top:14px;"><i class="fa-solid fa-circle-info"></i> La protection par IP est un frein raisonnable, pas une garantie absolue (réseaux partagés).</div>
+    </div>
+
+    <div class="projects-filter">
+      <button class="filter-chip active" data-tab="creer">Créer un événement</button>
+      <button class="filter-chip" data-tab="voter">Rejoindre un événement</button>
+    </div>
+
+    <div id="tab-creer" class="projet-panel glass">
+      <div class="field-row"><label>Titre de l'événement</label><input type="text" id="evTitre" placeholder="Ex: Soirée Awards"></div>
+      <h3 style="margin:20px 0 10px;">Catégories</h3>
+      <div id="categoriesContainer"></div>
+      <button class="btn btn-ghost" id="addCatBtn" style="margin-top:10px;"><i class="fa-solid fa-plus"></i> Ajouter une catégorie</button>
+      <button class="btn btn-primary btn-block" id="createEvBtn" style="margin-top:20px;"><i class="fa-solid fa-rocket"></i> Créer l'événement</button>
+      <div id="createResult" style="margin-top:20px;"></div>
+    </div>
+
+    <div id="tab-voter" class="projet-panel glass" style="display:none;">
+      <div class="field-row"><label>Code de l'événement</label><input type="text" id="codeInput" placeholder="ex: a1b2c3d4" style="text-transform:lowercase;"></div>
+      <button class="btn btn-primary btn-block" id="loadEvBtn"><i class="fa-solid fa-magnifying-glass"></i> Charger l'événement</button>
+      <div id="voteContent" style="margin-top:24px;"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-creer').style.display = btn.dataset.tab === 'creer' ? 'block' : 'none';
+      document.getElementById('tab-voter').style.display = btn.dataset.tab === 'voter' ? 'block' : 'none';
+    });
+  });
+
+  // ---- Création ----
+  const catContainer = document.getElementById('categoriesContainer');
+  function addCategorie(nom = '', options = ['', '']) {
+    const div = document.createElement('div');
+    div.className = 'projet-panel glass cat-block';
+    div.style.marginBottom = '14px';
+    div.innerHTML = `
+      <div class="field-row"><label>Nom de la catégorie</label><input type="text" class="cat-nom" value="${nom}" placeholder="Ex: Meilleur danseur"></div>
+      <div class="cat-options"></div>
+      <button type="button" class="btn btn-ghost add-option-btn" style="margin-top:8px;"><i class="fa-solid fa-plus"></i> Option</button>
+      <button type="button" class="btn btn-ghost remove-cat-btn" style="margin-top:8px;"><i class="fa-solid fa-trash"></i> Supprimer la catégorie</button>
+    `;
+    const optsDiv = div.querySelector('.cat-options');
+    options.forEach(opt => addOption(optsDiv, opt));
+    div.querySelector('.add-option-btn').addEventListener('click', () => addOption(optsDiv, ''));
+    div.querySelector('.remove-cat-btn').addEventListener('click', () => div.remove());
+    catContainer.appendChild(div);
+  }
+  function addOption(container, value) {
+    const row = document.createElement('div');
+    row.className = 'field-row-inline';
+    row.style.marginTop = '6px';
+    row.innerHTML = `<input type="text" class="cat-option" value="${value}" placeholder="Nom de l'option" style="flex:1;">`;
+    container.appendChild(row);
+  }
+  document.getElementById('addCatBtn').addEventListener('click', () => addCategorie());
+  addCategorie('Catégorie 1', ['Option A', 'Option B']);
+
+  document.getElementById('createEvBtn').addEventListener('click', async () => {
+    const titre = document.getElementById('evTitre').value;
+    const categories = Array.from(document.querySelectorAll('.cat-block')).map(block => ({
+      nom: block.querySelector('.cat-nom').value,
+      options: Array.from(block.querySelectorAll('.cat-option')).map(i => i.value).filter(Boolean)
+    })).filter(c => c.nom && c.options.length >= 2);
+
+    if (!titre || !categories.length) { alert('Titre et au moins une catégorie avec 2 options sont requis.'); return; }
+
+    const res = await fetch('/projets/vote/creer', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titre, categories })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('createResult').innerHTML = `
+        <div class="result-box">
+          <div class="result-value">${data.code}</div>
+          <div class="result-label">Code de l'événement — partagez-le avec vos invités</div>
+        </div>`;
+    } else {
+      alert(data.error || 'Erreur lors de la création.');
+    }
+  });
+
+  // ---- Vote ----
+  document.getElementById('loadEvBtn').addEventListener('click', () => loadEvent());
+
+  async function loadEvent() {
+    const code = document.getElementById('codeInput').value.trim();
+    if (!code) return;
+    const res = await fetch(`/projets/vote/evenement/${code}`);
+    const data = await res.json();
+    const content = document.getElementById('voteContent');
+    if (!res.ok) { content.innerHTML = `<p style="color:var(--danger);">${data.error}</p>`; return; }
+
+    content.innerHTML = `<h3 style="margin-bottom:16px;">${data.titre}</h3>` + data.categories.map(cat => `
+      <div class="projet-panel glass" style="margin-bottom:14px;">
+        <h4 style="margin-bottom:12px;">${cat.nom}</h4>
+        ${cat.options.map(opt => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-glass);">
+            <span>${opt} — <strong>${cat.votes[opt]}</strong> vote(s)</span>
+            ${cat.dejaVote ? '' : `<button class="btn btn-ghost vote-btn" data-cat="${cat.nom}" data-opt="${opt}">Voter</button>`}
+          </div>
+        `).join('')}
+        ${cat.dejaVote ? '<div class="badge-info" style="margin-top:10px;"><i class="fa-solid fa-check"></i> Vous avez déjà voté dans cette catégorie</div>' : ''}
+      </div>
+    `).join('');
+
+    content.querySelectorAll('.vote-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const r = await fetch(`/projets/vote/evenement/${code}/voter`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ categorie: btn.dataset.cat, option: btn.dataset.opt })
+        });
+        const d = await r.json();
+        if (d.success) loadEvent();
+        else alert(d.error);
+      });
+    });
+  }
+</script>

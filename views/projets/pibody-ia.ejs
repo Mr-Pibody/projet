@@ -1,0 +1,74 @@
+<%- include('../partials/back-button') %>
+
+<section class="projet-page">
+  <div class="container">
+    <div class="projet-header">
+      <div class="projet-eyebrow">Projet — Intelligence Artificielle</div>
+      <h1 class="projet-title">Pibody <span class="accent-text">IA</span></h1>
+      <p class="projet-desc">Un assistant conversationnel qui s'appuie sur plusieurs APIs gratuites en cascade (Groq → Gemini → Mistral) : si l'une échoue ou atteint son quota, la suivante prend le relais automatiquement.</p>
+      <div class="badge-info" style="margin-top:14px;"><i class="fa-solid fa-circle-info"></i> Nécessite au moins une clé API gratuite configurée côté serveur pour répondre.</div>
+    </div>
+
+    <div class="projet-panel glass" style="max-width:750px; margin:0 auto;">
+      <div id="chatMessages" style="height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding:10px; margin-bottom:16px;">
+        <div class="chat-msg chat-ia">Bonjour, je suis Pibody. Pose-moi une question !</div>
+      </div>
+      <div class="field-row-inline">
+        <input type="text" id="chatInput" placeholder="Écris ton message..." style="flex:1; padding:14px; border-radius:999px; border:1px solid var(--border-glass); background:var(--bg-secondary); color:var(--text-primary);">
+        <button class="btn btn-primary" id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .chat-msg { padding:14px 18px; border-radius:16px; max-width:80%; font-size:0.92rem; line-height:1.5; }
+  .chat-user { background: var(--accent); color:#04140f; align-self:flex-end; }
+  .chat-ia { background: var(--bg-secondary); border:1px solid var(--border-glass); align-self:flex-start; }
+  .chat-meta { font-size:0.7rem; color:var(--text-muted); margin-top:4px; }
+</style>
+
+<script>
+  const messagesBox = document.getElementById('chatMessages');
+  const input = document.getElementById('chatInput');
+
+  function addMessage(text, who, meta = '') {
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (who === 'user' ? 'chat-user' : 'chat-ia');
+    div.textContent = text;
+    if (meta) {
+      const m = document.createElement('div');
+      m.className = 'chat-meta'; m.textContent = meta;
+      div.appendChild(m);
+    }
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  async function send() {
+    const message = input.value.trim();
+    if (!message) return;
+    addMessage(message, 'user');
+    input.value = '';
+
+    addMessage('...', 'ia');
+    const loadingMsg = messagesBox.lastChild;
+
+    try {
+      const res = await fetch('/projets/pibody-ia/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      loadingMsg.remove();
+      if (data.success) addMessage(data.reply, 'ia', `via ${data.provider}`);
+      else addMessage(data.error, 'ia');
+    } catch (err) {
+      loadingMsg.remove();
+      addMessage('Erreur réseau, réessaie.', 'ia');
+    }
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', send);
+  input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
+</script>

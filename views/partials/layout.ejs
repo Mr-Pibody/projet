@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — Elfried ZANNOU' : 'Elfried ZANNOU — Portfolio' %></title>
+  <meta name="description" content="<%= typeof description !== 'undefined' ? description : 'Portfolio de Elfried ZANNOU - Développeur web, data & créateur de solutions numériques.' %>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+  <link rel="stylesheet" href="/css/hero-about.css">
+  <link rel="stylesheet" href="/css/stack-parcours-stats.css">
+  <link rel="stylesheet" href="/css/services-projects.css">
+  <link rel="stylesheet" href="/css/faq-contact-footer.css">
+  <link rel="stylesheet" href="/css/projet-commun.css">
+  <% if (typeof extraCss !== 'undefined') { extraCss.forEach(function(href) { %>
+    <link rel="stylesheet" href="<%= href %>">
+  <% }) } %>
+
+  <script>
+    // Applique le thème AVANT le rendu pour éviter le flash
+    (function() {
+      var saved = localStorage.getItem('theme');
+      if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    })();
+  </script>
+</head>
+<body>
+
+  <%- include('navbar') %>
+
+  <main>
+    <%- body %>
+  </main>
+
+  <%- include('footer') %>
+
+  <script src="/js/main.js"></script>
+  <% if (typeof isHome !== 'undefined' && isHome) { %>
+    <script src="/js/ambient.js"></script>
+  <% } %>
+  <% if (typeof extraJs !== 'undefined') { extraJs.forEach(function(src) { %>
+    <script src="<%= src %>"></script>
+  <% }) } %>
+</body>
+</html>

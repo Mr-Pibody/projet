@@ -1,0 +1,49 @@
+<%- include('../partials/back-button') %>
+
+<section class="projet-page">
+  <div class="container">
+    <div class="projet-header">
+      <div class="projet-eyebrow">Projet — Communauté</div>
+      <h1 class="projet-title">Petites Annonces</h1>
+      <p class="projet-desc">Tout le monde peut publier une annonce, affichée de façon soignée et attractive. Aucune modération automatique — reste correct.</p>
+    </div>
+
+    <div class="projet-panel glass" style="max-width:600px; margin-bottom:40px;">
+      <h3 style="margin-bottom:16px;"><i class="fa-solid fa-plus"></i> Publier une annonce</h3>
+      <form id="annonceForm">
+        <div class="field-row"><label>Titre</label><input type="text" name="titre" maxlength="100" required placeholder="De quoi parle ton annonce ?"></div>
+        <div class="field-row"><label>Description</label><textarea name="description" maxlength="500" rows="3" placeholder="Détails (max 500 caractères)"></textarea></div>
+        <div class="field-row"><label>Lien (optionnel)</label><input type="url" name="lien" placeholder="https://..."></div>
+        <div class="field-row"><label>Image (optionnel)</label><input type="file" name="image" accept="image/*"></div>
+        <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-bullhorn"></i> Publier</button>
+      </form>
+    </div>
+
+    <h3 style="margin-bottom:20px;">Annonces publiées</h3>
+    <div class="projects-grid" id="annoncesGrid">
+      <% if (!annonces.length) { %>
+        <p style="color:var(--text-muted);">Aucune annonce pour le moment — sois le premier à publier !</p>
+      <% } %>
+      <% annonces.forEach(a => { %>
+        <div class="project-card glass" style="border-color:<%= a.couleur_accent %>33;">
+          <% if (a.image) { %><img src="/uploads/annonces/<%= a.image %>" style="width:100%; height:160px; object-fit:cover; border-radius:10px; margin-bottom:14px;"><% } %>
+          <div class="pc-top"><div class="pc-icon" style="background:<%= a.couleur_accent %>22; color:<%= a.couleur_accent %>;"><i class="fa-solid fa-bullhorn"></i></div></div>
+          <h3><%= a.titre %></h3>
+          <p><%= a.description %></p>
+          <% if (a.lien) { %><a href="<%= a.lien %>" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="margin-top:10px; background:<%= a.couleur_accent %>; color:#04140f;">Voir l'offre <i class="fa-solid fa-arrow-up-right-from-square"></i></a><% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.getElementById('annonceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('/projets/annonces/publier', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert(data.error || 'Erreur lors de la publication.');
+  });
+</script>

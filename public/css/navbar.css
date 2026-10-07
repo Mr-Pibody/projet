@@ -1,0 +1,228 @@
+/* ============================================
+   NAVBAR FLOTTANTE + ORBE TOGGLE
+   ============================================ */
+
+.navbar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-glass);
+  animation: navFloat 6s ease-in-out infinite;
+}
+
+@keyframes navFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+.navbar .nav-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0 14px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.navbar .nav-links {
+  display: flex;
+  gap: 2px;
+}
+
+.navbar .nav-links a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.navbar .nav-links a:hover,
+.navbar .nav-links a.active {
+  color: var(--bg-primary);
+  background: var(--accent);
+}
+
+.navbar .nav-links a i { font-size: 0.8rem; }
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* L'orbe toggle thème */
+.theme-orb {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px var(--accent-soft);
+  transition: transform var(--transition-fast);
+  animation: orbPulse 3s ease-in-out infinite;
+}
+.theme-orb:hover { transform: scale(1.1); }
+.theme-orb:active { transform: scale(0.92); }
+
+@keyframes orbPulse {
+  0%, 100% { box-shadow: 0 0 14px var(--accent-soft); }
+  50% { box-shadow: 0 0 26px var(--accent-soft); }
+}
+
+.theme-orb svg {
+  width: 18px;
+  height: 18px;
+  stroke: #04140f;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.5s cubic-bezier(0.68,-0.4,0.27,1.4);
+}
+
+.theme-orb .icon-moon { display: none; }
+[data-theme="light"] .theme-orb .icon-sun { display: none; }
+[data-theme="light"] .theme-orb .icon-moon { display: block; }
+
+/* Transition iris au changement de thème */
+.theme-iris {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: var(--accent);
+  clip-path: circle(0% at var(--iris-x, 50%) var(--iris-y, 50%));
+  transition: clip-path 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-iris.active {
+  clip-path: circle(150% at var(--iris-x, 50%) var(--iris-y, 50%));
+}
+
+.theme-iris-face {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 5px solid #04140f;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(0.5) rotate(-15deg);
+  transition: opacity 0.4s ease 0.15s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
+  box-shadow: 0 0 40px rgba(0,0,0,0.3);
+}
+.theme-iris.active .theme-iris-face {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+@media (max-width: 600px) {
+  .theme-iris-face { width: 100px; height: 100px; border-width: 4px; }
+}
+
+/* Bouton mobile menu */
+.nav-burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+}
+
+@media (max-width: 768px) {
+  .navbar { top: 14px; padding: 8px; gap: 4px; left: 14px; right: 14px; transform: none; width: calc(100% - 28px); justify-content: space-between; animation: none; }
+  .navbar .nav-logo { padding: 0 8px; font-size: 0.85rem; }
+  .navbar .nav-links { display: none; }
+  .theme-orb { width: 44px; height: 44px; }
+  .nav-burger { width: 44px; height: 44px; }
+  .navbar.menu-open .nav-links {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    background: var(--bg-glass-strong);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    backdrop-filter: blur(20px);
+  }
+  .navbar.menu-open .nav-links a { padding: 14px 16px; }
+  .nav-burger { display: flex; }
+}
+
+/* Bouton retour flottant (utilisé dans les pages projet) */
+.back-float {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-glass);
+  transition: all var(--transition-fast);
+}
+.back-float:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+.back-float i { font-size: 0.8rem; }
+
+@media (max-width: 768px) {
+  .back-float { bottom: 16px; left: 16px; padding: 10px 16px; font-size: 0.8rem; }
+}
+
+/* Bouton CV flottant */
+.cv-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #04140f;
+  box-shadow: 0 8px 24px var(--accent-soft);
+  transition: transform var(--transition-fast);
+}
+.cv-float:hover { transform: translateY(-3px) scale(1.03); }
+
+@media (max-width: 768px) {
+  .cv-float { bottom: 20px; right: 20px; padding: 12px 16px; font-size: 0.78rem; }
+  .cv-float span { display: none; }
+}
